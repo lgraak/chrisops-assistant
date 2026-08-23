@@ -1,0 +1,27 @@
+schema: chrisops.assistant.acceptance-manifest.v1
+
+suite:
+  name: ChrisOps Assistant Acceptance Suite
+  version: v1
+
+scenarios:
+  - id: active-warning
+    description: >
+      Validates that active findings are explained without unsupported
+      remediation claims.
+    fixture: fixtures/active-warning.json
+    responses:
+      - file: responses/active-warning-good.json
+        expected: pass
+
+      - file: responses/active-warning-bad.json
+        expected: fail
+
+  - id: missing-observation
+    description: >
+      Validates that missing observation data does not become an assumed
+      outage or failure state.
+    fixture: fixtures/missing-observation.json
+    responses:
+      - file: responses/missing-observation-good.json
+        expected: pass
