@@ -1,59 +1,119 @@
 #!/usr/bin/env python3
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
-
-FIXTURE_ROOT = Path(__file__).resolve().parent.parent / "fixtures"
-
-
-REQUIRED_TOP_LEVEL_KEYS = {
-    "id",
-    "description",
-    "facts",
-    "expected",
-}
+ROOT = Path(__file__).resolve().parent.parent
+FIXTURE_ROOT = ROOT / "fixtures"
+RESPONSE_ROOT = ROOT / "responses"
+EVALUATOR = Path(__file__).resolve().parent / "evaluate_response.py"
 
 
-REQUIRED_EXPECTED_KEYS = {
-    "classification",
-    "required_statements",
-    "allowed_statements",
-    "prohibited_statements",
-}
-
-
-def load_fixture(path):
+def load_json(path):
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
 
 
-def validate_fixture(path):
-    fixture = load_fixture(path)
+def run_evaluator(fixture, response):
+    result = subprocess.run(
+        [
+            str(EVALUATOR),
+            str(fixture),
+            str(response),
+        ],
+        capture_output=True,
+        text=True,
+    )
 
-    missing = REQUIRED_TOP_LEVEL_KEYS - fixture.keys()
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {
+            "status": "failed",
+            "reason": result.stderr.strip(),
+        }
+
+
+def validate_fixture(path):
+    fixture = load_json(path)
+
+    required = {
+        "id",
+        "description",
+        "facts",
+        "expected",
+    }
+
+    missing = required - fixture.keys()
 
     if missing:
         return {
-            "fixture": str(path),
+            "fixture": path.name,
             "status": "failed",
-            "reason": f"missing top-level keys: {sorted(missing)}",
+            "reason": f"missing keys: {sorted(missing)}",
         }
 
-    expected_missing = REQUIRED_EXPECTED_KEYS - fixture["expected"].keys()
+    return None
 
-    if expected_missing:
-        return {
-            "fixture": str(path),
-            "status": "failed",
-            "reason": f"missing expected keys: {sorted(expected_missing)}",
-        }
+
+def evaluate_fixture(fixture_path):
+    fixture = load_json(fixture_path)
+
+    fixture_id = fixture["id"]
+
+    results = []
+
+    good_response = RESPONSE_ROOT / f"{fixture_id}-good.json"
+    bad_response = RESPONSE_ROOT / f"{fixture_id}-bad.json"
+
+    if good_response.exists():
+        result = run_evaluator(
+            fixture_path,
+            good_response,
+        )
+
+        results.append(
+            {
+                "response": good_response.name,
+                "expected": "pass",
+                "actual": result["status"],
+            }
+        )
+
+        if result["status"] != "passed":
+            return {
+                "fixture": fixture_id,
+                "status": "failed",
+                "results": results,
+            }
+
+    if bad_response.exists():
+        result = run_evaluator(
+            fixture_path,
+            bad_response,
+        )
+
+        results.append(
+            {
+                "response": bad_response.name,
+                "expected": "fail",
+                "actual": result["status"],
+            }
+        )
+
+        if result["status"] != "failed":
+            return {
+                "fixture": fixture_id,
+                "status": "failed",
+                "results": results,
+            }
 
     return {
-        "fixture": str(path),
+        "fixture": fixture_id,
         "status": "passed",
-        "classification": fixture["expected"]["classification"],
+        "results": results,
     }
 
 
@@ -72,10 +132,18 @@ def main():
         )
         sys.exit(1)
 
-    results = [
-        validate_fixture(path)
-        for path in fixtures
-    ]
+    results = []
+
+    for fixture in fixtures:
+        validation_error = validate_fixture(fixture)
+
+        if validation_error:
+            results.append(validation_error)
+            continue
+
+        results.append(
+            evaluate_fixture(fixture)
+        )
 
     failed = [
         result
