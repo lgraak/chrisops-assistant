@@ -15,10 +15,11 @@ def get_provider(config):
 
     if provider_type == "openvino":
         return OpenVINOProvider(
-            model_path=config.get("model_path"),
-            device=config.get(
-                "device",
-                "CPU",
+            endpoint=config.get("endpoint"),
+            model=config.get("model"),
+            timeout_seconds=config.get(
+                "timeout_seconds",
+                30,
             ),
         )
 
