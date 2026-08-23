@@ -4,15 +4,18 @@ import json
 import sys
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from lib.assistant_adapter import AssistantAdapter
-from lib.providers.deterministic import DeterministicProvider
+from lib.provider_factory import get_provider
 from lib.response_validation import validate_response
 
 
 FIXTURES = ROOT / "fixtures"
+PROVIDER_CONFIG = ROOT / "config/provider.yml"
 
 
 def load_json(path):
@@ -20,11 +23,21 @@ def load_json(path):
         return json.load(handle)
 
 
+def load_provider():
+    with PROVIDER_CONFIG.open(
+        "r",
+        encoding="utf-8",
+    ) as handle:
+        config = yaml.safe_load(handle)
+
+    return get_provider(config["provider"])
+
+
 def test_fixture(path):
     fixture = load_json(path)
 
     adapter = AssistantAdapter(
-        DeterministicProvider()
+        load_provider()
     )
 
     response = adapter.generate(fixture)
@@ -43,7 +56,9 @@ def test_fixture(path):
 
 
 def main():
-    fixtures = sorted(FIXTURES.glob("*.json"))
+    fixtures = sorted(
+        FIXTURES.glob("*.json")
+    )
 
     results = [
         test_fixture(path)
