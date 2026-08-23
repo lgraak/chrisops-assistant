@@ -1,0 +1,4 @@
+provider:
+  type: openvino
+  model_path: /does/not/exist
+  device: CPU

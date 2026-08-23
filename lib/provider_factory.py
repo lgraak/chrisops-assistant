@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from lib.providers.deterministic import DeterministicProvider
+from lib.providers.openvino import OpenVINOProvider
 
 
 def get_provider(config):
@@ -12,7 +13,15 @@ def get_provider(config):
     if provider_type == "deterministic":
         return DeterministicProvider()
 
+    if provider_type == "openvino":
+        return OpenVINOProvider(
+            model_path=config.get("model_path"),
+            device=config.get(
+                "device",
+                "CPU",
+            ),
+        )
+
     raise ValueError(
         f"unsupported provider type: {provider_type}"
     )
-
