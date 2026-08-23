@@ -36,3 +36,14 @@ scenarios:
 
       - file: responses/observation-overdue/bad.json
         expected: fail
+
+  - id: finding-notification-policy
+    description: >
+      Validates that findings and notification decisions are evaluated separately.
+    fixture: fixtures/finding-notification-policy.json
+    responses:
+      - file: responses/finding-notification-policy/good.json
+        expected: pass
+
+      - file: responses/finding-notification-policy/bad.json
+        expected: fail

@@ -1,0 +1,5 @@
+{
+  "classification": "notification-policy",
+  "response": "A finding exists, but the notification policy does not require escalation. Review the finding details if additional context is needed. No notification is required based on the current policy."
+}
+

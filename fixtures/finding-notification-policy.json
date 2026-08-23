@@ -1,0 +1,32 @@
+{
+  "id": "finding-notification-policy",
+  "description": "A warning finding exists but notification policy does not require escalation.",
+  "facts": {
+    "asset_id": "ansible",
+    "finding_type": "observation_overdue",
+    "severity": "warning",
+    "state": "resolved",
+    "notification": {
+      "email_eligible": false,
+      "suppressed": false,
+      "notification_count": 2
+    }
+  },
+  "expected": {
+    "classification": "notification-policy",
+    "required_statements": [
+      "finding exists",
+      "notification policy"
+    ],
+    "allowed_statements": [
+      "review the finding details",
+      "no notification is required"
+    ],
+    "prohibited_statements": [
+      "page the team",
+      "send an alert",
+      "immediate escalation",
+      "incident declared"
+    ]
+  }
+}
