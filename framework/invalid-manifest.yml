@@ -1,0 +1,11 @@
+schema: wrong.schema
+
+suite:
+  name: Invalid Test Manifest
+
+scenarios:
+  - id: broken-scenario
+    fixture: fixtures/does-not-exist.json
+    responses:
+      - file: responses/does-not-exist.json
+        expected: maybe
