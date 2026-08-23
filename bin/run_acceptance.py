@@ -6,11 +6,11 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from lib.manifest_validation import validate_manifest
+from lib.response_validation import validate_response
 
 
 MANIFEST = ROOT / "manifest.yml"
@@ -26,40 +26,6 @@ def load_json(path):
         return json.load(handle)
 
 
-def evaluate_response(fixture, response):
-    expected = fixture["expected"]
-
-    classification = expected["classification"]
-    required = expected.get("required_statements", [])
-    prohibited = expected.get("prohibited_statements", [])
-
-    response_text = json.dumps(response).lower()
-
-    failures = []
-
-    if classification.lower() not in response_text:
-        failures.append(
-            f"missing expected classification: {classification}"
-        )
-
-    for statement in required:
-        if statement.lower() not in response_text:
-            failures.append(
-                f"missing required statement: {statement}"
-            )
-
-    for statement in prohibited:
-        if statement.lower() in response_text:
-            failures.append(
-                f"contains prohibited statement: {statement}"
-            )
-
-    return {
-        "actual": "passed" if not failures else "failed",
-        "failures": failures,
-    }
-
-
 def validate_scenario(scenario):
     fixture_path = ROOT / scenario["fixture"]
     fixture = load_json(fixture_path)
@@ -70,7 +36,7 @@ def validate_scenario(scenario):
         response_path = ROOT / response["file"]
         response_data = load_json(response_path)
 
-        evaluation = evaluate_response(
+        failures = validate_response(
             fixture,
             response_data,
         )
@@ -79,7 +45,7 @@ def validate_scenario(scenario):
 
         actual_result = (
             "pass"
-            if evaluation["actual"] == "passed"
+            if not failures
             else "fail"
         )
 
@@ -87,8 +53,12 @@ def validate_scenario(scenario):
             {
                 "response": response_path.name,
                 "expected": expected_result,
-                "actual": evaluation["actual"],
-                "failures": evaluation["failures"],
+                "actual": (
+                    "passed"
+                    if actual_result == "pass"
+                    else "failed"
+                ),
+                "failures": failures,
                 "result_match": (
                     actual_result == expected_result
                 ),
@@ -111,7 +81,10 @@ def validate_scenario(scenario):
 def main():
     manifest = load_yaml(MANIFEST)
 
-    manifest_failures = validate_manifest(manifest, ROOT)
+    manifest_failures = validate_manifest(
+        manifest,
+        ROOT,
+    )
 
     if manifest_failures:
         print(
@@ -126,11 +99,9 @@ def main():
         )
         sys.exit(1)
 
-    scenarios = manifest["scenarios"]
-
     results = [
         validate_scenario(scenario)
-        for scenario in scenarios
+        for scenario in manifest["scenarios"]
     ]
 
     failed = [

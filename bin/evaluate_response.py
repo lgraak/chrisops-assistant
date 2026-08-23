@@ -4,54 +4,15 @@ import json
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from lib.response_validation import validate_response
+
 
 def load_json(path):
-    with open(path, "r", encoding="utf-8") as file:
-        return json.load(file)
-
-
-def validate_response(fixture, response):
-    expected = fixture["expected"]
-
-    classification = expected["classification"]
-    required = expected.get("required_statements", [])
-    allowed = expected.get("allowed_statements", [])
-    prohibited = expected.get("prohibited_statements", [])
-
-    response_text = json.dumps(response).lower()
-
-    failures = []
-
-    if classification not in response_text:
-        failures.append(
-            f"missing expected classification: {classification}"
-        )
-
-    for statement in required:
-        if statement.lower() not in response_text:
-            failures.append(
-                f"missing required statement: {statement}"
-            )
-
-    for statement in prohibited:
-        if statement.lower() in response_text:
-            failures.append(
-                f"contains prohibited statement: {statement}"
-            )
-
-    allowed_matches = [
-        statement
-        for statement in allowed
-        if statement.lower() in response_text
-    ]
-
-    return {
-        "fixture": fixture["id"],
-        "classification": classification,
-        "status": "passed" if not failures else "failed",
-        "allowed_statement_matches": allowed_matches,
-        "failures": failures,
-    }
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
 
 
 def main():
@@ -68,11 +29,21 @@ def main():
     fixture = load_json(fixture_path)
     response = load_json(response_path)
 
-    result = validate_response(fixture, response)
+    failures = validate_response(
+        fixture,
+        response,
+    )
+
+    result = {
+        "fixture": fixture["id"],
+        "classification": fixture["expected"]["classification"],
+        "status": "passed" if not failures else "failed",
+        "failures": failures,
+    }
 
     print(json.dumps(result, indent=2))
 
-    if result["status"] != "passed":
+    if failures:
         sys.exit(1)
 
 
