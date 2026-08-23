@@ -14,6 +14,8 @@ from lib.manifest_validation import validate_manifest
 
 
 INVALID_MANIFEST = ROOT / "framework" / "invalid-manifest.yml"
+MANIFEST = ROOT / "manifest.yml"
+SCENARIO_INDEX = ROOT / "scenario-index.yml"
 
 
 def load_yaml(path):
@@ -21,7 +23,30 @@ def load_yaml(path):
         return yaml.safe_load(handle)
 
 
-def main():
+def validate_scenario_index(manifest, scenario_index):
+    failures = []
+
+    manifest_scenarios = {
+        scenario["id"]
+        for scenario in manifest.get("scenarios", [])
+    }
+
+    indexed_scenarios = {
+        scenario["id"]
+        for scenario in scenario_index.get("scenarios", [])
+    }
+
+    missing = manifest_scenarios - indexed_scenarios
+
+    for scenario_id in sorted(missing):
+        failures.append(
+            f"scenario missing from index: {scenario_id}"
+        )
+
+    return failures
+
+
+def run_invalid_manifest_test():
     manifest = load_yaml(INVALID_MANIFEST)
 
     failures = validate_manifest(
@@ -29,22 +54,54 @@ def main():
         ROOT,
     )
 
-    result = {
+    return {
         "fixture": INVALID_MANIFEST.name,
         "expected": "fail",
         "actual": "failed" if failures else "passed",
         "failures": failures,
+        "status": "passed" if failures else "failed",
     }
 
-    result["status"] = (
-        "passed"
-        if failures
-        else "failed"
+
+def run_scenario_index_test():
+    manifest = load_yaml(MANIFEST)
+    scenario_index = load_yaml(SCENARIO_INDEX)
+
+    failures = validate_scenario_index(
+        manifest,
+        scenario_index,
     )
 
-    print(json.dumps(result, indent=2))
+    return {
+        "fixture": SCENARIO_INDEX.name,
+        "expected": "pass",
+        "actual": "failed" if failures else "passed",
+        "failures": failures,
+        "status": "passed" if not failures else "failed",
+    }
 
-    if result["status"] != "passed":
+
+def main():
+    results = [
+        run_invalid_manifest_test(),
+        run_scenario_index_test(),
+    ]
+
+    failed = [
+        result
+        for result in results
+        if result["status"] != "passed"
+    ]
+
+    output = {
+        "status": "failed" if failed else "passed",
+        "tests_checked": len(results),
+        "results": results,
+    }
+
+    print(json.dumps(output, indent=2))
+
+    if failed:
         sys.exit(1)
 
 
