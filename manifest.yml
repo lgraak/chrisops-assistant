@@ -25,3 +25,14 @@ scenarios:
     responses:
       - file: responses/missing-observation-good.json
         expected: pass
+
+  - id: observation-overdue
+    description: >
+      Validates that stale observation data is not interpreted as a host failure.
+    fixture: fixtures/observation-overdue.json
+    responses:
+      - file: responses/observation-overdue/good.json
+        expected: pass
+
+      - file: responses/observation-overdue/bad.json
+        expected: fail

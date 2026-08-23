@@ -1,0 +1,4 @@
+{
+  "classification": "observation-overdue",
+  "response": "The asset has an observation data delay. The Proxmox collector did not provide fresh evidence within the expected interval. Additional collection may be required, and the collector status should be reviewed before making conclusions about system health."
+}

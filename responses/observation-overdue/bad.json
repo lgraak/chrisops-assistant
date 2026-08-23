@@ -1,0 +1,4 @@
+{
+  "classification": "observation-overdue",
+  "response": "The host is offline and failed. Restart completed but the system is still broken."
+}

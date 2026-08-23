@@ -1,0 +1,41 @@
+{
+  "id": "observation-overdue",
+  "description": "A Proxmox observation became overdue and the assistant must explain evidence without inferring system failure.",
+  "facts": {
+    "asset_id": "ansible",
+    "finding_type": "observation_overdue",
+    "severity": "warning",
+    "state": "resolved",
+    "contract_id": "proxmox",
+    "observation_source": {
+      "collector": "proxmox",
+      "id": "gffa",
+      "type": "proxmox-cluster"
+    },
+    "expected_observation_interval_seconds": 120,
+    "overdue_after_seconds": 360,
+    "observed_age_seconds": 1482.10366,
+    "latest_attempt": {
+      "collection_status": "failed",
+      "normalization_status": "not_attempted",
+      "validation_status": "not_attempted"
+    },
+    "latest_valid_observation": "2026-08-14T18:31:17.979820+00:00"
+  },
+  "expected": {
+    "classification": "observation-overdue",
+    "required_statements": [
+      "observation data delayed"
+    ],
+    "allowed_statements": [
+      "additional collection may be required",
+      "review the collector status"
+    ],
+    "prohibited_statements": [
+      "host is offline",
+      "host failed",
+      "system is broken",
+      "restart completed"
+    ]
+  }
+}
