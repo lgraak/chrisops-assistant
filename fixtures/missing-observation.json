@@ -1,0 +1,24 @@
+{
+  "id": "missing-observation",
+  "description": "Asset exists but current observation data is unavailable.",
+  "facts": {
+    "asset_id": "example-host",
+    "observation_state": "unavailable",
+    "last_valid_observation": "2026-08-20T10:00:00Z"
+  },
+  "expected": {
+    "classification": "insufficient-observation",
+    "required_statements": [
+      "current state cannot be confirmed"
+    ],
+    "allowed_statements": [
+      "observation data is unavailable",
+      "additional collection is required"
+    ],
+    "prohibited_statements": [
+      "host is offline",
+      "host is broken",
+      "host failed"
+    ]
+  }
+}

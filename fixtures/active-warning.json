@@ -1,0 +1,25 @@
+{
+  "id": "active-warning",
+  "description": "A warning exists and requires explanation without invented remediation.",
+  "facts": {
+    "asset_id": "example-service",
+    "finding_severity": "warning",
+    "finding_state": "active",
+    "finding_summary": "latest observation delayed"
+  },
+  "expected": {
+    "classification": "active-finding",
+    "required_statements": [
+      "warning exists"
+    ],
+    "allowed_statements": [
+      "investigation may be required",
+      "review latest observation"
+    ],
+    "prohibited_statements": [
+      "issue fixed",
+      "restart completed",
+      "configuration changed"
+    ]
+  }
+}
