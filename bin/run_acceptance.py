@@ -15,6 +15,12 @@ def load_yaml(path):
     with path.open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle)
 
+
+def load_json(path):
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
 def validate_manifest(manifest):
     failures = []
 
@@ -22,10 +28,14 @@ def validate_manifest(manifest):
         return ["manifest is not a YAML object"]
 
     if manifest.get("schema") != "chrisops.assistant.acceptance-manifest.v1":
-        failures.append("unsupported or missing manifest schema")
+        failures.append(
+            "unsupported or missing manifest schema"
+        )
 
     if "scenarios" not in manifest:
-        failures.append("manifest missing scenarios")
+        failures.append(
+            "manifest missing scenarios"
+        )
 
     if failures:
         return failures
@@ -83,11 +93,6 @@ def validate_manifest(manifest):
                     )
 
     return failures
-
-
-def load_json(path):
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
 
 
 def evaluate_response(fixture, response):
@@ -153,11 +158,10 @@ def validate_scenario(scenario):
                 "expected": expected_result,
                 "actual": evaluation["actual"],
                 "failures": evaluation["failures"],
+                "result_match": (
+                    actual_result == expected_result
+                ),
             }
-        )
-
-        response_results[-1]["result_match"] = (
-            actual_result == expected_result
         )
 
     failed = [
@@ -175,6 +179,21 @@ def validate_scenario(scenario):
 
 def main():
     manifest = load_yaml(MANIFEST)
+
+    manifest_failures = validate_manifest(manifest)
+
+    if manifest_failures:
+        print(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "reason": "invalid acceptance manifest",
+                    "failures": manifest_failures,
+                },
+                indent=2,
+            )
+        )
+        sys.exit(1)
 
     scenarios = manifest["scenarios"]
 
@@ -203,20 +222,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-manifest = load_yaml(MANIFEST)
-
-manifest_failures = validate_manifest(manifest)
-
-if manifest_failures:
-    print(
-        json.dumps(
-            {
-                "status": "failed",
-                "reason": "invalid acceptance manifest",
-                "failures": manifest_failures,
-            },
-            indent=2,
-        )
-    )
-    sys.exit(1)
