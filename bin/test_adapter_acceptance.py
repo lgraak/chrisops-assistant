@@ -7,7 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from lib.assistant_adapter import generate_response
+from lib.assistant_adapter import AssistantAdapter
+from lib.providers.deterministic import DeterministicProvider
 from lib.response_validation import validate_response
 
 
@@ -22,7 +23,11 @@ def load_json(path):
 def test_fixture(path):
     fixture = load_json(path)
 
-    response = generate_response(fixture)
+    adapter = AssistantAdapter(
+        DeterministicProvider()
+    )
+
+    response = adapter.generate(fixture)
 
     failures = validate_response(
         fixture,

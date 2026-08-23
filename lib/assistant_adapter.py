@@ -1,36 +1,16 @@
 #!/usr/bin/env python3
 
-def generate_response(fixture):
-    expected = fixture["expected"]
 
-    classification = expected["classification"]
+class AssistantAdapter:
+    """
+    Assistant orchestration layer.
 
-    return {
-        "classification": classification,
-        "summary": build_summary(classification),
-        "explanation": build_explanation(fixture),
-        "confidence": "bounded",
-    }
+    The adapter does not generate responses itself.
+    It delegates generation to a model provider.
+    """
 
+    def __init__(self, provider):
+        self.provider = provider
 
-def build_summary(classification):
-    summaries = {
-        "active-finding": "A finding exists and requires review.",
-        "insufficient-observation": "Current state cannot be confirmed due to insufficient observation data.",
-        "observation-overdue": "Observation data delayed.",
-        "notification-policy": "A finding exists, but notification policy must be evaluated separately.",
-    }
-
-    return summaries.get(
-        classification,
-        "The condition requires review.",
-    )
-
-
-def build_explanation(fixture):
-    description = fixture.get(
-        "description",
-        "Evidence was provided by ChrisOps.",
-    )
-
-    return description
+    def generate(self, context):
+        return self.provider.generate(context)

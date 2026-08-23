@@ -7,7 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from lib.assistant_adapter import generate_response
+from lib.assistant_adapter import AssistantAdapter
+from lib.providers.deterministic import DeterministicProvider
 
 
 def main():
@@ -23,7 +24,11 @@ def main():
     with fixture_path.open("r", encoding="utf-8") as handle:
         fixture = json.load(handle)
 
-    response = generate_response(fixture)
+    adapter = AssistantAdapter(
+        DeterministicProvider()
+    )
+
+    response = adapter.generate(fixture)
 
     print(json.dumps(response, indent=2))
 
