@@ -8,6 +8,11 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from lib.manifest_validation import validate_manifest
+
+
 MANIFEST = ROOT / "manifest.yml"
 
 
@@ -19,80 +24,6 @@ def load_yaml(path):
 def load_json(path):
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
-
-
-def validate_manifest(manifest):
-    failures = []
-
-    if not isinstance(manifest, dict):
-        return ["manifest is not a YAML object"]
-
-    if manifest.get("schema") != "chrisops.assistant.acceptance-manifest.v1":
-        failures.append(
-            "unsupported or missing manifest schema"
-        )
-
-    if "scenarios" not in manifest:
-        failures.append(
-            "manifest missing scenarios"
-        )
-
-    if failures:
-        return failures
-
-    for scenario in manifest["scenarios"]:
-        scenario_id = scenario.get("id", "<missing>")
-
-        required_keys = {
-            "id",
-            "fixture",
-            "responses",
-        }
-
-        missing = required_keys - scenario.keys()
-
-        if missing:
-            failures.append(
-                f"{scenario_id}: missing keys {sorted(missing)}"
-            )
-            continue
-
-        fixture = ROOT / scenario["fixture"]
-
-        if not fixture.exists():
-            failures.append(
-                f"{scenario_id}: fixture not found: {fixture}"
-            )
-
-        if not isinstance(scenario["responses"], list):
-            failures.append(
-                f"{scenario_id}: responses must be a list"
-            )
-            continue
-
-        for response in scenario["responses"]:
-            response_file = response.get("file")
-            expected = response.get("expected")
-
-            if not response_file:
-                failures.append(
-                    f"{scenario_id}: response missing file"
-                )
-
-            if expected not in {"pass", "fail"}:
-                failures.append(
-                    f"{scenario_id}: invalid expected result {expected}"
-                )
-
-            if response_file:
-                path = ROOT / response_file
-
-                if not path.exists():
-                    failures.append(
-                        f"{scenario_id}: response not found: {path}"
-                    )
-
-    return failures
 
 
 def evaluate_response(fixture, response):
@@ -180,7 +111,7 @@ def validate_scenario(scenario):
 def main():
     manifest = load_yaml(MANIFEST)
 
-    manifest_failures = validate_manifest(manifest)
+    manifest_failures = validate_manifest(manifest, ROOT)
 
     if manifest_failures:
         print(

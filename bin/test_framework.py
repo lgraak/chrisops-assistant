@@ -8,6 +8,11 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from lib.manifest_validation import validate_manifest
+
+
 INVALID_MANIFEST = ROOT / "framework" / "invalid-manifest.yml"
 
 
@@ -16,48 +21,13 @@ def load_yaml(path):
         return yaml.safe_load(handle)
 
 
-def validate_manifest(manifest):
-    failures = []
-
-    if not isinstance(manifest, dict):
-        return ["manifest is not a YAML object"]
-
-    if manifest.get("schema") != "chrisops.assistant.acceptance-manifest.v1":
-        failures.append(
-            "unsupported or missing manifest schema"
-        )
-
-    if "scenarios" not in manifest:
-        failures.append(
-            "manifest missing scenarios"
-        )
-
-    if failures:
-        return failures
-
-    for scenario in manifest["scenarios"]:
-        scenario_id = scenario.get("id", "<missing>")
-
-        required_keys = {
-            "id",
-            "fixture",
-            "responses",
-        }
-
-        missing = required_keys - scenario.keys()
-
-        if missing:
-            failures.append(
-                f"{scenario_id}: missing keys {sorted(missing)}"
-            )
-
-    return failures
-
-
 def main():
     manifest = load_yaml(INVALID_MANIFEST)
 
-    failures = validate_manifest(manifest)
+    failures = validate_manifest(
+        manifest,
+        ROOT,
+    )
 
     result = {
         "fixture": INVALID_MANIFEST.name,
