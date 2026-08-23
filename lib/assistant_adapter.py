@@ -17,7 +17,7 @@ def build_summary(classification):
     summaries = {
         "active-finding": "A finding exists and requires review.",
         "insufficient-observation": "Current state cannot be confirmed due to insufficient observation data.",
-        "observation-overdue": "Observation data is delayed.",
+        "observation-overdue": "Observation data delayed.",
         "notification-policy": "A finding exists, but notification policy must be evaluated separately.",
     }
 
