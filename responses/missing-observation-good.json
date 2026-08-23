@@ -1,0 +1,4 @@
+{
+  "classification": "insufficient-observation",
+  "response": "Current state cannot be confirmed because observation data is unavailable. There is insufficient observation data to determine the current state of this asset. The assistant should not infer health status or recommend remediation until valid observation data is available."
+}

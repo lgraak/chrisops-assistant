@@ -1,0 +1,4 @@
+{
+  "classification": "active-finding",
+  "response": "A warning exists for this asset. A warning condition is currently active. The system has identified an issue but does not have enough information to determine the root cause. Review the associated finding details and collect additional evidence before taking action."
+}
