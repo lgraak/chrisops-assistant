@@ -1,0 +1,14 @@
+schema: chrisops.assistant.scenario-index.v1
+
+scenarios:
+  - id: active-warning
+    documentation: active-warning
+
+  - id: missing-observation
+    documentation: missing-observation
+
+  - id: observation-overdue
+    documentation: observation-overdue
+
+  - id: finding-notification-policy
+    documentation: finding-notification-policy
