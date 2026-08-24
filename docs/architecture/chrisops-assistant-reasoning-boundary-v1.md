@@ -4,9 +4,9 @@
 
 This document defines the reasoning boundary for the ChrisOps assistant layer.
 
-The assistant exists to explain validated infrastructure state. It does not replace collectors, observers, policy engines, automation controllers, or human approval processes.
+The assistant exists to interpret approved ChrisOps operational evidence and context. It does not replace collectors, observers, policy engines, automation controllers, or human approval processes.
 
-The assistant consumes approved summaries and contracts. It does not directly consume raw infrastructure systems.
+The assistant consumes approved ChrisOps summaries, outputs, and contracts. It does not directly consume raw infrastructure systems.
 
 ---
 
@@ -14,14 +14,13 @@ The assistant consumes approved summaries and contracts. It does not directly co
 
 The assistant must reason from facts, not discover facts.
 
-The source of truth remains:
+Source-of-truth responsibilities remain outside the assistant:
 
-1. Infrastructure collectors
-2. ChrisOps observation contracts
-3. Validation and policy evaluation
-4. Assistant summary adapters
+1. `homelab-ops` owns infrastructure intent, desired environment state, Ansible automation, and deployment configuration.
+2. `chrisops` owns operational runtime state, application behavior, APIs, collectors, product contracts, validation, and policy evaluation.
+3. `chrisops-assistant` owns reasoning behavior, model and provider contracts, assistant workflows, and evaluation, but not authoritative system state.
 
-The assistant is a presentation and interpretation layer.
+Assistant adapters prepare approved evidence for reasoning. They do not become a source of truth. The assistant is a presentation and interpretation layer, and its output is always advisory.
 
 ---
 
@@ -112,7 +111,9 @@ Example:
 
 The assistant may recommend actions.
 
-The assistant may not perform actions unless a separate approved automation workflow exists.
+The assistant may prepare proposed actions, but it does not authorize or execute them.
+
+Approved automation executes actions through a separate workflow with its own authority and validation. Assistant output remains advisory and never becomes authoritative system state.
 
 Example:
 

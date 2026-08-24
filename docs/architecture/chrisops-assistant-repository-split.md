@@ -5,30 +5,50 @@
 This document records the separation of ChrisOps Assistant from the
 homelab-ops repository.
 
-The split creates a dedicated repository for assistant logic while
-keeping operational state, infrastructure automation, and ChrisOps
-source-of-truth components in homelab-ops.
+That extraction is historical context. Current ownership follows a
+three-repository architecture separating infrastructure intent, ChrisOps
+runtime and product behavior, and assistant reasoning.
 
 ------------------------------------------------------------------------
 
 ## Repository Separation
 
-The repositories now have separate responsibilities.
+The three repositories have separate current responsibilities.
 
 ### homelab-ops
 
-The homelab-ops repository contains the operational plane.
+The homelab-ops repository contains infrastructure intent and deployment
+configuration.
 
 Responsibilities include:
 
 -   infrastructure automation
 -   Ansible roles and playbooks
--   ChrisOps state collection
--   operational contracts
--   deployment workflows
+-   desired environment state
+-   deployment configuration and workflows
 -   infrastructure documentation
 
-ChrisOps remains the source of truth for operational state.
+It does not own ChrisOps application behavior, collectors, APIs, or
+assistant reasoning.
+
+------------------------------------------------------------------------
+
+### chrisops
+
+The chrisops repository contains the operational control plane and
+application behavior.
+
+Responsibilities include:
+
+-   operational runtime state
+-   application and controller behavior
+-   APIs
+-   collectors and evidence processing
+-   product contracts
+-   operational workflows and presentation
+
+It consumes infrastructure intent and deployment context from
+homelab-ops and provides approved operational evidence to the assistant.
 
 ------------------------------------------------------------------------
 
@@ -47,20 +67,37 @@ Responsibilities include:
 -   model integration testing
 
 The assistant interprets operational evidence. It does not create
-operational truth.
+operational truth. Its output is advisory and never becomes authoritative
+system state.
 
 ------------------------------------------------------------------------
 
 ## Architecture Boundary
 
-The relationship between the repositories is:
+The current relationship between the repositories is:
 
     homelab-ops
 
-    ChrisOps State
+    Infrastructure Intent
+    Desired Environment State
+    Ansible and Deployment Configuration
           |
           v
-    Operational Evidence
+    Managed Infrastructure
+    Observed Runtime State
+          |
+          v
+
+
+    chrisops
+
+    Collectors and Evidence Processing
+          |
+          v
+    Operational State, APIs, and Product Contracts
+          |
+          v
+    Approved Evidence and Context
           |
           v
 
@@ -109,9 +146,12 @@ development history.
 
 The split enforces several boundaries:
 
--   ChrisOps owns operational truth.
+-   homelab-ops owns infrastructure intent and deployment configuration.
+-   chrisops owns operational state and product behavior.
+-   chrisops-assistant owns reasoning behavior and evaluation.
 -   The assistant consumes evidence.
 -   Models interpret evidence but do not define facts.
+-   Assistant output is advisory and never authoritative system state.
 -   Providers abstract inference backends.
 -   Acceptance tests define acceptable assistant behavior.
 
@@ -120,7 +160,7 @@ The split enforces several boundaries:
 ## Future Expansion
 
 The dedicated assistant repository allows future additions without
-expanding the operational repository.
+expanding infrastructure or ChrisOps application ownership.
 
 Potential future capabilities:
 
