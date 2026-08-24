@@ -61,14 +61,16 @@ It may not:
 The OpenVINO provider handles:
 
 -   service endpoint configuration
+-   configured model identity
 -   request serialization
 -   response parsing
 -   timeout handling
--   service error reporting
+-   propagation of service and response errors
 
 The provider does not handle:
 
--   model selection logic
+-   dynamic model selection or routing
+-   model loading or device selection
 -   ChrisOps policy interpretation
 -   assistant contracts
 -   acceptance decisions
@@ -77,18 +79,29 @@ The provider does not handle:
 
 ## Request Contract
 
-The provider sends approved assistant context.
+The provider sends an OpenAI-compatible chat completion request. Contract
+instructions are placed in the system message. The approved assistant
+context is JSON-serialized into the user message.
 
 Example:
 
 ``` json
 {
-  "classification": "observation-overdue",
-  "facts": {
-    "asset_id": "ansible",
-    "collector": "proxmox",
-    "age_seconds": 1482
-  }
+  "model": "qwen3-8b-openvino-gpu",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Assistant response-contract instructions"
+    },
+    {
+      "role": "user",
+      "content": "{\"classification\": \"observation-overdue\", \"facts\": {\"asset_id\": \"ansible\", \"collector\": \"proxmox\", \"age_seconds\": 1482}}"
+    }
+  ],
+  "max_tokens": 256,
+  "temperature": 0.2,
+  "stream": false,
+  "enable_thinking": false
 }
 ```
 
@@ -100,21 +113,32 @@ Secrets and unrelated operational data must not be included.
 
 ## Response Contract
 
-The service returns a response candidate.
+The service returns an OpenAI-compatible response. The response candidate
+is a JSON string in `choices[0].message.content`.
 
 Example:
 
 ``` json
 {
-  "classification": "observation-overdue",
-  "summary": "Observation data delayed.",
-  "explanation": "The collector did not provide fresh evidence within the expected interval.",
-  "confidence": "bounded"
+  "id": "chatcmpl-local-openvino-1",
+  "object": "chat.completion",
+  "model": "qwen3-8b-openvino-gpu",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"classification\":\"observation-overdue\",\"summary\":\"Observation data delayed.\",\"explanation\":\"The collector did not provide fresh evidence within the expected interval.\",\"confidence\":\"bounded\"}"
+      },
+      "finish_reason": "stop"
+    }
+  ]
 }
 ```
 
-The response is not trusted until it passes the existing acceptance
-framework.
+The provider parses and normalizes the candidate into the assistant
+response envelope. The normalized response is not trusted until it passes
+the existing acceptance framework.
 
 ------------------------------------------------------------------------
 
@@ -138,13 +162,11 @@ A model service outage does not indicate a ChrisOps finding.
 
 ## Timeout Behavior
 
-The provider should define:
+The provider uses the configured `timeout_seconds` value for the service
+request. The current implementation does not retry automatically.
 
--   request timeout
--   retry behavior
--   failure reporting
-
-Timeouts should produce provider errors.
+Timeout, HTTP, malformed-envelope, and invalid model-content errors
+propagate to the caller as client or parsing exceptions.
 
 They should not produce invented operational conclusions.
 

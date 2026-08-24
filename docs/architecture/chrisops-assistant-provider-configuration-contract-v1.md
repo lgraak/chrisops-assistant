@@ -31,23 +31,37 @@ The acceptance framework remains the final validation boundary.
 
 ## Provider Selection
 
-The assistant adapter selects a provider through configuration.
+The repository entry points load the `provider` mapping from:
 
-Example:
+    config/provider.yml
+
+The provider factory translates that mapping into a provider instance and
+injects the instance into the assistant adapter. The adapter does not load
+configuration or select a concrete provider.
+
+The current deterministic configuration is:
 
 ``` yaml
 provider:
   type: deterministic
-  version: v1
 ```
 
-Future examples:
+The current factory also supports the service-backed OpenVINO provider:
 
 ``` yaml
 provider:
   type: openvino
-  model: local-model-name
+  endpoint: http://192.168.20.70:8000
+  model: qwen3-8b-openvino-gpu
+  timeout_seconds: 30
 ```
+
+`config/provider-openvino.yml` records this OpenVINO configuration as an
+alternate example. The current entry points do not select that file
+automatically; they read `config/provider.yml`.
+
+An Ollama-compatible provider is not currently implemented. A future
+configuration may use:
 
 ``` yaml
 provider:
@@ -87,8 +101,7 @@ Provider configuration controls:
 
 -   backend selection
 -   model selection
--   runtime options
--   resource settings
+-   service endpoint and request timeout for service-backed providers
 
 Provider configuration does not control:
 
@@ -130,13 +143,17 @@ behavior.
 
 ------------------------------------------------------------------------
 
-## Future Model Providers
+## Supported and Future Model Providers
+
+The current factory supports:
+
+-   deterministic response generation
+-   OpenVINO service-backed inference
 
 Future providers may include:
 
--   OpenVINO local inference
 -   Ollama-compatible inference
--   API-backed inference
+-   other API-backed inference
 
 All providers must implement the same provider interface.
 

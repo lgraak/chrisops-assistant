@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This document defines the contract for the OpenVINO-backed inference
-provider used by the ChrisOps assistant architecture.
+This document defines the contract for the service-backed OpenVINO
+inference provider used by the ChrisOps assistant architecture.
 
 The OpenVINO provider is an implementation of the existing model
 provider interface.
@@ -17,13 +17,14 @@ ChrisOps remains the source of truth.
 
 ## Design Principle
 
-The OpenVINO provider is responsible for model execution.
+The OpenVINO provider is responsible for invoking model execution through
+the configured ai-lab OpenVINO service.
 
 It may:
 
--   load an approved model
--   execute inference
--   manage runtime interaction
+-   construct requests for an approved model identity
+-   send approved assistant context to the inference service
+-   manage service interaction
 -   return generated response candidates
 
 It may not:
@@ -50,6 +51,9 @@ Flow:
     OpenVINO Provider
             |
             v
+    OpenVINO Service API
+            |
+            v
     OpenVINO Runtime
             |
             v
@@ -64,18 +68,18 @@ The adapter does not contain OpenVINO-specific logic.
 OpenVINO configuration should define:
 
 -   provider type
--   model location
+-   service endpoint
 -   model identity
--   device selection
--   runtime options
+-   request timeout
 
 Example:
 
 ``` yaml
 provider:
   type: openvino
-  model_path: /path/to/model
-  device: GPU
+  endpoint: http://192.168.20.70:8000
+  model: qwen3-8b-openvino-gpu
+  timeout_seconds: 30
 ```
 
 Configuration changes must be reviewable.
@@ -84,7 +88,10 @@ Configuration changes must be reviewable.
 
 ## Model Identity
 
-Models must have identifiable versions.
+The provider sends a configured model identifier to the service.
+
+The service owns the loaded model artifact and must reject a requested
+identifier that does not match the loaded model.
 
 Model identity may include:
 
@@ -102,7 +109,8 @@ Model changes require acceptance validation.
 
 ## Device Selection
 
-Device selection is an implementation detail.
+Device selection is an implementation detail of the external OpenVINO
+service, not the assistant provider client.
 
 Possible targets may include:
 
@@ -111,8 +119,8 @@ Possible targets may include:
 -   discrete GPU
 -   other supported accelerators
 
-The provider must expose device configuration without changing the
-adapter contract.
+Changing service-side device selection must not change the adapter or
+model-provider contract.
 
 ------------------------------------------------------------------------
 
@@ -148,16 +156,17 @@ inference.
 
 ------------------------------------------------------------------------
 
-## Initial Implementation Scope
+## Current Implementation Scope
 
-The first OpenVINO provider implementation should:
+The current OpenVINO provider implementation:
 
 -   satisfy the ModelProvider interface
--   execute a configured model
+-   call a configured OpenAI-compatible service endpoint
+-   request a configured model identifier
 -   return a response envelope
 -   preserve existing acceptance behavior
 
-The first implementation should not add:
+The implementation does not add:
 
 -   new contracts
 -   new validation paths
@@ -170,10 +179,9 @@ The first implementation should not add:
 Future OpenVINO provider improvements may include:
 
 -   streaming output
--   batching
--   hardware optimization
--   model lifecycle management
--   performance telemetry
+-   additional generation controls
+-   client-side performance telemetry
+-   service authentication
 
 All improvements must preserve the provider boundary.
 

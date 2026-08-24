@@ -37,10 +37,12 @@ Current supported endpoints:
     GET /v1/models
     POST /v1/chat/completions
 
-The assistant provider uses:
+The current assistant provider uses:
 
-    GET /v1/models
     POST /v1/chat/completions
+
+The other endpoints are service capabilities used for operational
+inspection and validation; the current provider client does not call them.
 
 ------------------------------------------------------------------------
 
@@ -84,8 +86,9 @@ Example:
     }
   ],
   "max_tokens": 256,
-  "temperature": 0.7,
-  "stream": false
+  "temperature": 0.2,
+  "stream": false,
+  "enable_thinking": false
 }
 ```
 
@@ -108,8 +111,30 @@ The model receives evidence, not authority.
 
 ## Response Normalization
 
-The provider is responsible for normalizing model output into the
-assistant response envelope.
+For a non-streaming request, the service returns an OpenAI-compatible chat
+completion envelope. The generated model text is contained in
+`choices[0].message.content`:
+
+``` json
+{
+  "id": "chatcmpl-local-openvino-1",
+  "object": "chat.completion",
+  "model": "qwen3-8b-openvino-gpu",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"classification\":\"observation-overdue\",\"summary\":\"Observation data delayed.\",\"explanation\":\"The collector did not provide fresh evidence within the expected interval.\",\"confidence\":\"bounded\"}"
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}
+```
+
+The provider parses the JSON object in `message.content` and normalizes it
+into the assistant response envelope.
 
 Expected output:
 

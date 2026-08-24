@@ -5,7 +5,8 @@
 This document defines the contract for inference-backed model providers
 used by the ChrisOps assistant architecture.
 
-The inference provider is responsible for model execution.
+The inference provider is responsible for invoking model execution through
+its configured runtime or service.
 
 It is not responsible for operational truth, policy decisions, or
 acceptance decisions.
@@ -45,7 +46,7 @@ It may not:
     Inference Provider
             |
             v
-    Model Runtime
+    Configured Model Runtime or Service
             |
             v
     Response Candidate
@@ -59,11 +60,15 @@ It may not:
 
 An inference provider is responsible for:
 
--   model loading
--   runtime interaction
--   device selection
--   inference execution
+-   invoking the configured model runtime or service
+-   runtime or service interaction
+-   passing the configured model identity and approved context
+-   requesting inference execution
 -   returning generated output
+
+An in-process provider may also load a model and select a device. A
+service-backed provider delegates model loading, device selection, and
+hardware allocation to the inference service.
 
 The provider is not responsible for:
 
@@ -128,11 +133,11 @@ The assistant adapter must not contain runtime-specific logic.
 
 ## OpenVINO Provider Expectations
 
-An OpenVINO provider should:
+The current service-backed OpenVINO provider must:
 
 -   use the existing ModelProvider interface
 -   expose model execution through generate()
--   keep device selection configurable
+-   keep the service endpoint and model identity configurable
 -   report inference failures separately from operational findings
 
 Example failure:
@@ -151,7 +156,8 @@ An inference failure is not an infrastructure finding.
 
 ## Hardware Boundary
 
-Hardware acceleration is an implementation detail.
+Hardware acceleration is an implementation detail of the configured model
+runtime or service.
 
 Possible targets may include:
 
