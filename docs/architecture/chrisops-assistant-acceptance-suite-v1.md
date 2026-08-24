@@ -19,7 +19,7 @@ Tests are organized into three components.
 
 Location:
 
-tests/chrisops-assistant/fixtures/
+fixtures/
 
 Fixtures define:
 
@@ -35,7 +35,7 @@ Fixtures represent the scenario contract.
 
 Location:
 
-tests/chrisops-assistant/responses/
+responses/
 
 Response fixtures represent candidate assistant outputs.
 
@@ -52,7 +52,7 @@ Bad responses intentionally violate one or more rules and should fail evaluation
 
 Location:
 
-tests/chrisops-assistant/bin/evaluate_response.py
+bin/evaluate_response.py
 
 The evaluator performs deterministic checks.
 

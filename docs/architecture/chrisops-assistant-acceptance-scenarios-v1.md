@@ -25,7 +25,7 @@ The acceptance suite validates that assistant responses remain within available 
 
 Location:
 
-tests/chrisops-assistant/fixtures/active-warning.json
+fixtures/active-warning.json
 
 Validates:
 
@@ -45,7 +45,7 @@ The assistant must not claim:
 
 Location:
 
-tests/chrisops-assistant/fixtures/missing-observation.json
+missing-observation.json
 
 Validates:
 
@@ -64,7 +64,7 @@ The assistant must not claim:
 
 Location:
 
-tests/chrisops-assistant/fixtures/observation-overdue.json
+observation-overdue.json
 
 Source:
 
@@ -87,7 +87,7 @@ The assistant must not claim:
 
 Location:
 
-tests/chrisops-assistant/fixtures/finding-notification-policy.json
+finding-notification-policy.json
 
 Source:
 

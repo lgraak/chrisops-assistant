@@ -256,10 +256,12 @@ Those decisions require supporting policy evidence.
 
 ## Acceptance Relationship
 
-The interaction contract is validated by:
+The interaction contract is validated by the repository-local acceptance framework:
 
 ```
-tests/chrisops-assistant/
+fixtures/
+responses/
+bin/run_acceptance.py
 ```
 
 The acceptance suite verifies:
