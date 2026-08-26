@@ -41,7 +41,9 @@ class AssistantAdapter:
         invocation = self.provider.invoke(context)
         persistence_status = "disabled"
 
-        if invocation.telemetry_result is not None and self.persistence_enabled:
+        if invocation.boundary_telemetry_owned:
+            persistence_status = "inference_boundary"
+        elif invocation.telemetry_result is not None and self.persistence_enabled:
             try:
                 inserted = self.store.write_run(invocation.telemetry_result.run)
                 persistence_status = "persisted" if inserted else "replayed"

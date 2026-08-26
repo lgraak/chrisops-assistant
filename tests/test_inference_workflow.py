@@ -218,6 +218,9 @@ def test_openvino_provider_uses_accepted_a60_client_and_preserves_prompt_contrac
     assert request.endpoint_alias == "a60-private"
     assert request.hardware_alias == "intel-arc-pro-a60"
     assert request.serving_engine == "openvino"
+    assert request.caller == "chrisops_assistant"
+    assert request.boundary_workload == "agent"
+    assert len(request.correlation_run_id) == 36
     assert request.chat_messages[0] == {
         "role": "system",
         "content": SYSTEM_PROMPT,
@@ -233,6 +236,27 @@ def test_openvino_provider_uses_accepted_a60_client_and_preserves_prompt_contrac
     encoded_run = json.dumps(result.run)
     assert "assistant context" not in encoded_run
     assert "a60.example.invalid" not in encoded_run
+
+
+def test_openvino_boundary_ownership_prevents_assistant_duplicate_write():
+    result = InferenceResult(content=json.dumps(RESPONSE), run=_run())
+    provider = OpenVINOProvider(
+        client=FakeClient(result),
+        endpoint="https://a60.example.invalid/v1/chat/completions",
+        endpoint_alias="a60-private",
+        model="qwen3-8b-openvino-gpu",
+        workload_id="chrisops-assistant",
+        hardware_alias="intel-arc-pro-a60",
+        serving_engine="openvino",
+    )
+    store = RecordingStore()
+
+    response = AssistantAdapter(
+        provider, persistence_enabled=True, store=store
+    ).generate({"bounded": "context"})
+
+    assert response == RESPONSE
+    assert store.runs == []
 
 
 def test_openvino_provider_returns_safe_failed_terminal_invocation():

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import uuid
 
 from chrisops_state.inference import InferenceRequest
 
@@ -120,6 +121,9 @@ class OpenVINOProvider(ModelProvider):
             hardware_alias=self.hardware_alias,
             serving_engine=self.serving_engine,
             serving_version=self.serving_version,
+            correlation_run_id=str(uuid.uuid4()),
+            caller="chrisops_assistant",
+            boundary_workload="agent",
         )
 
     def normalize_response(self, parsed):
@@ -182,6 +186,7 @@ class OpenVINOProvider(ModelProvider):
                 response=None,
                 telemetry_result=result,
                 error_category=outcome.get("error_category") or "unknown_safe",
+                boundary_telemetry_owned=True,
             )
         try:
             response = self.parse_response(result.content)
@@ -190,5 +195,10 @@ class OpenVINOProvider(ModelProvider):
                 response=None,
                 telemetry_result=result,
                 error_category="response_protocol",
+                boundary_telemetry_owned=True,
             )
-        return ProviderInvocation(response=response, telemetry_result=result)
+        return ProviderInvocation(
+            response=response,
+            telemetry_result=result,
+            boundary_telemetry_owned=True,
+        )

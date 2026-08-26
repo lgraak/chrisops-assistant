@@ -10,6 +10,7 @@ class ProviderInvocation:
     response: dict | None
     telemetry_result: InferenceResult | None = None
     error_category: str | None = None
+    boundary_telemetry_owned: bool = False
 
 
 class ModelProvider:
