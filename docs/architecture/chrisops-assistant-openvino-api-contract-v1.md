@@ -22,7 +22,7 @@ Current inference service:
 
 Base endpoint:
 
-    http://192.168.20.70:8000
+    https://a60.example.invalid
 
 The service exposes an OpenAI-compatible chat completion interface.
 
@@ -87,7 +87,10 @@ Example:
   ],
   "max_tokens": 256,
   "temperature": 0.2,
-  "stream": false,
+  "stream": true,
+  "stream_options": {
+    "include_usage": true
+  },
   "enable_thinking": false
 }
 ```
@@ -111,20 +114,19 @@ The model receives evidence, not authority.
 
 ## Response Normalization
 
-For a non-streaming request, the service returns an OpenAI-compatible chat
-completion envelope. The generated model text is contained in
-`choices[0].message.content`:
+For a streaming request, the service returns OpenAI-compatible SSE chat
+completion chunks. The accepted ChrisOps client combines content deltas,
+captures terminal usage and finish reason, and returns one InferenceResult:
 
 ``` json
 {
   "id": "chatcmpl-local-openvino-1",
-  "object": "chat.completion",
+  "object": "chat.completion.chunk",
   "model": "qwen3-8b-openvino-gpu",
   "choices": [
     {
       "index": 0,
-      "message": {
-        "role": "assistant",
+      "delta": {
         "content": "{\"classification\":\"observation-overdue\",\"summary\":\"Observation data delayed.\",\"explanation\":\"The collector did not provide fresh evidence within the expected interval.\",\"confidence\":\"bounded\"}"
       },
       "finish_reason": "stop"
@@ -133,7 +135,7 @@ completion envelope. The generated model text is contained in
 }
 ```
 
-The provider parses the JSON object in `message.content` and normalizes it
+The provider parses the JSON object in the combined generated content and normalizes it
 into the assistant response envelope.
 
 Expected output:
@@ -183,8 +185,12 @@ Example:
 ``` yaml
 provider:
   type: openvino
-  endpoint: http://192.168.20.70:8000
+  endpoint: https://a60.example.invalid/v1/chat/completions
+  endpoint_alias: a60-private
   model: qwen3-8b-openvino-gpu
+  workload_id: chrisops-assistant
+  hardware_alias: intel-arc-pro-a60
+  serving_engine: openvino
   timeout_seconds: 30
 ```
 
@@ -211,7 +217,7 @@ The contracts are not.
 
 Future API capabilities may include:
 
--   streaming responses
+-   additional accepted streaming event variants
 -   additional models
 -   model routing
 -   performance metrics

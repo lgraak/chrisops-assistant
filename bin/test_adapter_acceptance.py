@@ -4,13 +4,10 @@ import json
 import sys
 from pathlib import Path
 
-import yaml
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from lib.assistant_adapter import AssistantAdapter
-from lib.provider_factory import get_provider
+from lib.configuration import load_adapter
 from lib.response_validation import validate_response
 
 
@@ -23,22 +20,10 @@ def load_json(path):
         return json.load(handle)
 
 
-def load_provider():
-    with PROVIDER_CONFIG.open(
-        "r",
-        encoding="utf-8",
-    ) as handle:
-        config = yaml.safe_load(handle)
-
-    return get_provider(config["provider"])
-
-
 def test_fixture(path):
     fixture = load_json(path)
 
-    adapter = AssistantAdapter(
-        load_provider()
-    )
+    adapter = load_adapter(PROVIDER_CONFIG)
 
     response = adapter.generate(fixture)
 

@@ -51,9 +51,17 @@ The current factory also supports the service-backed OpenVINO provider:
 ``` yaml
 provider:
   type: openvino
-  endpoint: http://192.168.20.70:8000
+  endpoint: https://a60.example.invalid/v1/chat/completions
+  endpoint_alias: a60-private
   model: qwen3-8b-openvino-gpu
+  workload_id: chrisops-assistant
+  hardware_alias: intel-arc-pro-a60
+  serving_engine: openvino
+  schema_path: /opt/chrisops-source/state/schemas/inference-run-v1.schema.json
   timeout_seconds: 30
+telemetry:
+  persistence_enabled: false
+  database_path: /var/lib/chrisops/inference/inference.sqlite3
 ```
 
 `config/provider-openvino.yml` records this OpenVINO configuration as an
@@ -102,12 +110,25 @@ Provider configuration controls:
 -   backend selection
 -   model selection
 -   service endpoint and request timeout for service-backed providers
+-   safe telemetry aliases and the externally installed schema path
+-   optional provider credential-file reference
+-   persistence enablement and database path
 
 Provider configuration does not control:
 
 -   source-of-truth data
 -   acceptance requirements
 -   policy decisions
+
+The production configuration is rendered by homelab-ops; product source
+contains no private endpoint or credential. The deployed workflow also has a
+separate runtime.workflow_enabled activation gate. Both workflow and telemetry
+persistence remain disabled before M5B.
+
+When persistence is enabled, configuration constructs
+InferenceRunStore(require_existing=True). Ordinary assistant requests
+therefore cannot create or migrate the database. M5B must initialize and verify
+schema version 4 explicitly before enabling the workflow.
 
 ------------------------------------------------------------------------
 

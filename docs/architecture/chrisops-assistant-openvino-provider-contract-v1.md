@@ -51,6 +51,9 @@ Flow:
     OpenVINO Provider
             |
             v
+    ChrisOps InstrumentedA60Client
+            |
+            v
     OpenVINO Service API
             |
             v
@@ -69,19 +72,28 @@ OpenVINO configuration should define:
 
 -   provider type
 -   service endpoint
--   model identity
+-   safe endpoint, model, workload, hardware, and serving-engine aliases
+-   ChrisOps inference schema path
 -   request timeout
+-   optional credential-file reference
 
 Example:
 
 ``` yaml
 provider:
   type: openvino
-  endpoint: http://192.168.20.70:8000
+  endpoint: https://a60.example.invalid/v1/chat/completions
+  endpoint_alias: a60-private
   model: qwen3-8b-openvino-gpu
+  workload_id: chrisops-assistant
+  hardware_alias: intel-arc-pro-a60
+  serving_engine: openvino
+  schema_path: /opt/chrisops-source/state/schemas/inference-run-v1.schema.json
   timeout_seconds: 30
 ```
 
+The example endpoint is deliberately non-routable. Environment-specific
+endpoint and credential references are owned by homelab-ops.
 Configuration changes must be reviewable.
 
 ------------------------------------------------------------------------
@@ -160,17 +172,22 @@ inference.
 
 The current OpenVINO provider implementation:
 
--   satisfy the ModelProvider interface
--   call a configured OpenAI-compatible service endpoint
--   request a configured model identifier
--   return a response envelope
+-   satisfies the ModelProvider.invoke() interface
+-   builds the existing system/user prompt and bounded generation options
+-   invokes the accepted ChrisOps InstrumentedA60Client
+-   receives generated content plus one schema-valid terminal run
+-   translates generated JSON back to the existing assistant response
+-   returns provider failure categories separately from operational findings
 -   preserve existing acceptance behavior
+
+The provider never writes SQLite. The assistant adapter owns exactly one
+optional InferenceRunStore.write_run() call after terminal normalization.
 
 The implementation does not add:
 
 -   new contracts
 -   new validation paths
--   provider-specific assistant logic
+-   provider-specific database logic
 
 ------------------------------------------------------------------------
 
@@ -180,7 +197,7 @@ Future OpenVINO provider improvements may include:
 
 -   streaming output
 -   additional generation controls
--   client-side performance telemetry
+-   additional accepted telemetry fields
 -   service authentication
 
 All improvements must preserve the provider boundary.

@@ -2,9 +2,33 @@
 
 import json
 
-import requests
+from chrisops_state.inference import InferenceRequest
 
-from lib.model_provider import ModelProvider
+from lib.model_provider import ModelProvider, ProviderInvocation
+
+
+SYSTEM_PROMPT = (
+    "You are a ChrisOps assistant. "
+    "Return only valid JSON. "
+    "Do not invent operational facts. "
+    "Your response must contain exactly "
+    "these fields: classification, summary, "
+    "explanation, confidence. "
+    "Preserve required contract language "
+    "from the evidence. "
+    "For insufficient observation scenarios, "
+    "explicitly state that current state "
+    "cannot be confirmed. "
+    "Do not claim systems are failed, "
+    "offline, fixed, restarted, or remediated "
+    "unless explicitly supported by evidence. "
+    "Example: "
+    '{"classification":"observation-overdue",'
+    '"summary":"Observation data delayed.",'
+    '"explanation":"The collector did not '
+    'provide fresh evidence.",'
+    '"confidence":"bounded"}'
+)
 
 
 class OpenVINOProvider(ModelProvider):
@@ -27,67 +51,76 @@ class OpenVINOProvider(ModelProvider):
 
     def __init__(
         self,
+        client,
         endpoint,
+        endpoint_alias,
         model,
+        workload_id,
+        hardware_alias,
+        serving_engine,
+        serving_version=None,
+        authorization_token=None,
         timeout_seconds=30,
     ):
-        self.endpoint = endpoint.rstrip("/")
+        self.client = client
+        self.endpoint = endpoint
+        self.endpoint_alias = endpoint_alias
         self.model = model
+        self.workload_id = workload_id
+        self.hardware_alias = hardware_alias
+        self.serving_engine = serving_engine
+        self.serving_version = serving_version
+        self.authorization_token = authorization_token
         self.timeout_seconds = timeout_seconds
 
     def validate_configuration(self):
-        if not self.endpoint:
-            raise ValueError(
-                "OpenVINO endpoint is required"
-            )
-
-        if not self.model:
-            raise ValueError(
-                "OpenVINO model is required"
-            )
+        required = {
+            "endpoint": self.endpoint,
+            "endpoint_alias": self.endpoint_alias,
+            "model": self.model,
+            "workload_id": self.workload_id,
+            "hardware_alias": self.hardware_alias,
+            "serving_engine": self.serving_engine,
+        }
+        if any(not isinstance(value, str) or not value for value in required.values()):
+            raise ValueError("OpenVINO provider configuration is incomplete")
+        if (
+            not isinstance(self.timeout_seconds, (int, float))
+            or isinstance(self.timeout_seconds, bool)
+            or not 0 < self.timeout_seconds <= 600
+        ):
+            raise ValueError("OpenVINO timeout must be in (0, 600] seconds")
 
     def build_request(self, context):
-        return {
-            "model": self.model,
-            "messages": [
+        serialized_context = json.dumps(context, indent=2)
+        return InferenceRequest(
+            provider="a60_local",
+            endpoint_alias=self.endpoint_alias,
+            endpoint_url=self.endpoint,
+            model=self.model,
+            workload_id=self.workload_id,
+            request_mode="streaming",
+            prompt=serialized_context,
+            authorization_token=self.authorization_token,
+            chat_messages=(
                 {
                     "role": "system",
-                    "content": (
-                        "You are a ChrisOps assistant. "
-                        "Return only valid JSON. "
-                        "Do not invent operational facts. "
-                        "Your response must contain exactly "
-                        "these fields: classification, summary, "
-                        "explanation, confidence. "
-                        "Preserve required contract language "
-                        "from the evidence. "
-                        "For insufficient observation scenarios, "
-                        "explicitly state that current state "
-                        "cannot be confirmed. "
-                        "Do not claim systems are failed, "
-                        "offline, fixed, restarted, or remediated "
-                        "unless explicitly supported by evidence. "
-                        "Example: "
-                        '{"classification":"observation-overdue",'
-                        '"summary":"Observation data delayed.",'
-                        '"explanation":"The collector did not '
-                        'provide fresh evidence.",'
-                        '"confidence":"bounded"}'
-                    ),
+                    "content": SYSTEM_PROMPT,
                 },
                 {
                     "role": "user",
-                    "content": json.dumps(
-                        context,
-                        indent=2,
-                    ),
+                    "content": serialized_context,
                 },
-            ],
-            "max_tokens": 256,
-            "temperature": 0.2,
-            "stream": False,
-            "enable_thinking": False,
-        }
+            ),
+            generation_options={
+                "max_tokens": 256,
+                "temperature": 0.2,
+                "enable_thinking": False,
+            },
+            hardware_alias=self.hardware_alias,
+            serving_engine=self.serving_engine,
+            serving_version=self.serving_version,
+        )
 
     def normalize_response(self, parsed):
         classification = parsed["classification"]
@@ -121,13 +154,7 @@ class OpenVINOProvider(ModelProvider):
             ),
         }
 
-    def parse_response(self, response):
-        content = (
-            response["choices"][0]
-            ["message"]
-            ["content"]
-        )
-
+    def parse_response(self, content):
         parsed = json.loads(content)
 
         required_fields = {
@@ -146,19 +173,22 @@ class OpenVINOProvider(ModelProvider):
 
         return self.normalize_response(parsed)
 
-    def generate(self, context):
+    def invoke(self, context):
         self.validate_configuration()
-
-        request = self.build_request(context)
-
-        response = requests.post(
-            f"{self.endpoint}/v1/chat/completions",
-            json=request,
-            timeout=self.timeout_seconds,
-        )
-
-        response.raise_for_status()
-
-        return self.parse_response(
-            response.json()
-        )
+        result = self.client.stream(self.build_request(context))
+        outcome = result.run.get("outcome", {})
+        if outcome.get("status") != "success":
+            return ProviderInvocation(
+                response=None,
+                telemetry_result=result,
+                error_category=outcome.get("error_category") or "unknown_safe",
+            )
+        try:
+            response = self.parse_response(result.content)
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+            return ProviderInvocation(
+                response=None,
+                telemetry_result=result,
+                error_category="response_protocol",
+            )
+        return ProviderInvocation(response=response, telemetry_result=result)

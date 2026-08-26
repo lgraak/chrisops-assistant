@@ -38,7 +38,12 @@ The assistant does not replace or override the authority of
 Current providers:
 
 -   deterministic
--   OpenVINO service provider
+-   OpenVINO service provider through the accepted ChrisOps A60 instrumented
+    client
+
+The assistant adapter owns the logical invocation and the single optional
+terminal telemetry write. ChrisOps owns provider instrumentation,
+InferenceResult, schema validation, and SQLite persistence semantics.
 
 ## Validation
 
@@ -50,6 +55,9 @@ Run:
 ./bin/test_adapter_acceptance.py
 ./bin/test_framework.py
 ```
+
+Focused M5Q tests also live under tests/ and require the pinned ChrisOps
+product dependency to be importable.
 
 ## Architecture
 
@@ -70,7 +78,16 @@ Model Provider Interface
 Deterministic      OpenVINO Provider
 Provider                 |
                          v
+              ChrisOps InstrumentedA60Client
+                         |
+                         v
                   ai-lab Inference API
+                         |
+                         v
+                  InferenceResult
+                         |
+                         v
+              Assistant persistence coordinator
         |
         v
 Response Validation
@@ -86,7 +103,16 @@ Acceptance Framework
 -   `chrisops-assistant` owns advisory interpretation and reasoning.
 -   Models interpret evidence but do not create facts.
 -   Providers abstract inference backends.
+-   Provider clients never write telemetry; the assistant adapter owns the one
+    optional terminal write.
 -   Acceptance tests define acceptable assistant behavior.
+
+## Runtime packaging
+
+pyproject.toml declares the direct chrisops==0.1.0 product dependency.
+Production deployment pins both source revisions in homelab-ops and invokes
+the assistant from those local checkouts. Runtime inference does not fetch Git
+or copy ChrisOps source into this repository.
 
 ## Future Providers
 

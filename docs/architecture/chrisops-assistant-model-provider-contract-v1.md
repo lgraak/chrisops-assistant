@@ -60,6 +60,8 @@ A model provider is responsible for:
 -   receiving approved context
 -   generating a response candidate
 -   returning structured output
+-   returning the terminal ChrisOps InferenceResult when it uses an
+    instrumented provider
 
 A model provider is not responsible for:
 
@@ -119,7 +121,7 @@ Example:
 
 ``` python
 class ModelProvider:
-    def generate(self, context):
+    def invoke(self, context):
         pass
 ```
 
@@ -130,7 +132,11 @@ Implementations may include:
 -   API-backed provider
 -   future providers
 
-The adapter should not depend on a specific implementation.
+The adapter should not depend on a specific implementation. Instrumented
+providers return a provider invocation containing the translated response,
+terminal telemetry result, and a bounded provider error category when
+applicable. The adapter owns persistence and unwraps the normal response for
+existing callers.
 
 ------------------------------------------------------------------------
 

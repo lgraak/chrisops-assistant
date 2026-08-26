@@ -1,5 +1,16 @@
+runtime:
+  workflow_enabled: false
 provider:
   type: openvino
-  endpoint: http://192.168.20.70:8000
+  endpoint: https://a60.example.invalid/v1/chat/completions
+  endpoint_alias: a60-private
   model: qwen3-8b-openvino-gpu
+  workload_id: chrisops-assistant
+  hardware_alias: intel-arc-pro-a60
+  serving_engine: openvino
+  serving_version:
+  schema_path: /opt/chrisops-source/state/schemas/inference-run-v1.schema.json
   timeout_seconds: 30
+telemetry:
+  persistence_enabled: false
+  database_path: /var/lib/chrisops/inference/inference.sqlite3

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chrisops-assistant"
+version = "0.1.0"
+description = "ChrisOps assistant reasoning and provider workflow"
+requires-python = ">=3.11"
+dependencies = [
+    "chrisops==0.1.0",
+    "PyYAML>=6.0",
+]
+
+[project.scripts]
+chrisops-assistant-generate = "lib.cli:main"
+
+[tool.setuptools]
+packages = ["lib", "lib.providers"]

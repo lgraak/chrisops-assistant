@@ -1,2 +1,4 @@
 provider:
   type: deterministic
+telemetry:
+  persistence_enabled: false

@@ -26,6 +26,8 @@ It may:
 -   provide structured context to a model
 -   produce a response envelope
 -   preserve evidence limitations
+-   persist one content-free terminal InferenceResult.run through the
+    configured ChrisOps store
 
 It may not:
 
@@ -45,6 +47,8 @@ It may not:
           |
           v
     Assistant Adapter
+          |
+          +--> optional terminal telemetry persistence
           |
           v
     Assistant Response
@@ -87,6 +91,18 @@ Example:
   "confidence": "bounded"
 }
 ```
+
+The response shape remains unchanged when persistence succeeds or is disabled.
+When inference succeeds and persistence fails, the adapter raises a bounded
+telemetry-persistence exception that retains the generated response for the
+owning caller. It never exposes a database exception or path.
+
+When provider inference fails, that provider category remains primary. A
+simultaneous persistence failure is represented separately by the bounded
+persistence_status value and does not replace the provider failure.
+
+The adapter is the only persistence owner. Provider clients return
+InferenceResult and do not call write_run().
 
 ------------------------------------------------------------------------
 
