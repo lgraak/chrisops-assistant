@@ -1,3 +1,61 @@
-__pycache__/
-*.pyc
+# Secrets and credentials
+*.key
+*.pem
+*.pfx
+*.p12
+*.ppk
+*.kdbx
+*.env
+.env.*
+credentials*
+secrets*
+vault-password*
 
+# Ansible
+*.retry
+ansible/inventories/**/host_vars/*/vault.yml
+ansible/inventories/**/group_vars/*/vault.yml
+!ansible/inventories/production/group_vars/all/vault.yml
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# PowerShell
+*.clixml
+
+# Editors and OS
+.vscode/
+.idea/
+.claudian/
+.obsidian/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.old
+ts'
+*~
+
+# Materialized ChrisOps Agent Kit state
+.codex/vendor/
+.codex/agent-kit.lock.json
+.codex/agents/artifact-producer.toml
+.codex/agents/change-engineer.toml
+.codex/agents/documentation-steward.toml
+.codex/agents/independent-validator.toml
+.codex/agents/state-investigator.toml
+
+# Frontend dependency workspaces (production build artifacts are committed)
+node_modules/
